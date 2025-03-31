@@ -1,132 +1,60 @@
 import { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import MQTTService from '../services/mqttService';
 
 export default function ControlScreen() {
-  const [gains, setGains] = useState({
-    kp: '',
-    ki: '',
-    kd: '',
+  const [controller, setController] = useState({
+    pole: '',
+    zero: '',
+    gain: '',
   });
   
-  const [poles, setPoles] = useState(['']);
-  const [zeros, setZeros] = useState(['']);
   const [setpoint, setSetpoint] = useState('');
-
-  const addPole = () => setPoles([...poles, '']);
-  const addZero = () => setZeros([...zeros, '']);
-
-  const removePole = (index: number) => {
-    const newPoles = poles.filter((_, i) => i !== index);
-    setPoles(newPoles);
-  };
-
-  const removeZero = (index: number) => {
-    const newZeros = zeros.filter((_, i) => i !== index);
-    setZeros(newZeros);
-  };
-
-  const updatePole = (value: string, index: number) => {
-    const newPoles = [...poles];
-    newPoles[index] = value;
-    setPoles(newPoles);
-  };
-
-  const updateZero = (value: string, index: number) => {
-    const newZeros = [...zeros];
-    newZeros[index] = value;
-    setZeros(newZeros);
-  };
 
   const handleSubmit = () => {
     const controlData = {
-      gains,
-      poles: poles.filter(p => p !== '').map(Number),
-      zeros: zeros.filter(z => z !== '').map(Number),
+      controller,
       setpoint: Number(setpoint),
     };
-    console.log('Control Parameters:', controlData);
+    const message = JSON.stringify(controlData);
+    MQTTService.publish('control/parameters', message);
+    console.log('Control Parameters Published:', controlData);
   };
 
   return (
     <ScrollView style={styles.container}>
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>PID Gains</Text>
+        <Text style={styles.sectionTitle}>Frequency Response Controller</Text>
         <View style={styles.inputRow}>
-          <Text style={styles.label}>Kp:</Text>
+          <Text style={styles.label}>Gain:</Text>
           <TextInput
             style={styles.input}
-            value={gains.kp}
-            onChangeText={(value) => setGains({ ...gains, kp: value })}
+            value={controller.gain}
+            onChangeText={(value) => setController({ ...controller, gain: value })}
             keyboardType="numeric"
-            placeholder="Proportional gain"
+            placeholder="Controller gain"
           />
         </View>
         <View style={styles.inputRow}>
-          <Text style={styles.label}>Ki:</Text>
+          <Text style={styles.label}>Pole:</Text>
           <TextInput
             style={styles.input}
-            value={gains.ki}
-            onChangeText={(value) => setGains({ ...gains, ki: value })}
+            value={controller.pole}
+            onChangeText={(value) => setController({ ...controller, pole: value })}
             keyboardType="numeric"
-            placeholder="Integral gain"
+            placeholder="Compensator pole"
           />
         </View>
         <View style={styles.inputRow}>
-          <Text style={styles.label}>Kd:</Text>
+          <Text style={styles.label}>Zero:</Text>
           <TextInput
             style={styles.input}
-            value={gains.kd}
-            onChangeText={(value) => setGains({ ...gains, kd: value })}
+            value={controller.zero}
+            onChangeText={(value) => setController({ ...controller, zero: value })}
             keyboardType="numeric"
-            placeholder="Derivative gain"
+            placeholder="Compensator zero"
           />
         </View>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>System Poles</Text>
-        {poles.map((pole, index) => (
-          <View key={index} style={styles.inputRow}>
-            <TextInput
-              style={styles.input}
-              value={pole}
-              onChangeText={(value) => updatePole(value, index)}
-              keyboardType="numeric"
-              placeholder={`Pole ${index + 1}`}
-            />
-            <TouchableOpacity
-              style={styles.removeButton}
-              onPress={() => removePole(index)}>
-              <Text style={styles.removeButtonText}>Remove</Text>
-            </TouchableOpacity>
-          </View>
-        ))}
-        <TouchableOpacity style={styles.addButton} onPress={addPole}>
-          <Text style={styles.addButtonText}>Add Pole</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>System Zeros</Text>
-        {zeros.map((zero, index) => (
-          <View key={index} style={styles.inputRow}>
-            <TextInput
-              style={styles.input}
-              value={zero}
-              onChangeText={(value) => updateZero(value, index)}
-              keyboardType="numeric"
-              placeholder={`Zero ${index + 1}`}
-            />
-            <TouchableOpacity
-              style={styles.removeButton}
-              onPress={() => removeZero(index)}>
-              <Text style={styles.removeButtonText}>Remove</Text>
-            </TouchableOpacity>
-          </View>
-        ))}
-        <TouchableOpacity style={styles.addButton} onPress={addZero}>
-          <Text style={styles.addButtonText}>Add Zero</Text>
-        </TouchableOpacity>
       </View>
 
       <View style={styles.section}>

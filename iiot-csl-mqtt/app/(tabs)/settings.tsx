@@ -1,50 +1,52 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, Switch } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Button, Alert } from 'react-native';
+import MQTTService from '../services/mqttService';
 
 export default function SettingsScreen() {
-  const [darkMode, setDarkMode] = useState(false);
-  const [notifications, setNotifications] = useState(true);
-  const [dataSync, setDataSync] = useState(true);
+  const [mqttIP, setMqttIP] = useState('');
+  const [mqttPort, setMqttPort] = useState('');
+
+  const connectToMQTT = () => {
+    if (!mqttIP || !mqttPort) {
+      Alert.alert('Error', 'Fill IP and Port');
+      return;
+    }
+
+    MQTTService.connect(
+      mqttIP,
+      parseInt(mqttPort),
+      'expo-client',
+      (message: any) => console.log(`📩 Recebido: ${message.payloadString}`),
+      (error: any) => console.log(`⚠️ Conexão perdida: ${error.errorMessage}`)
+    ).then(() => {
+      Alert.alert('Success', 'Connected to broker');
+    }).catch(() => {
+      Alert.alert('Error', 'Connection failed');
+    });
+  };
+
 
   return (
     <View style={styles.container}>
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>App Settings</Text>
-        
-        <View style={styles.settingRow}>
-          <Text style={styles.settingLabel}>Dark Mode</Text>
-          <Switch
-            value={darkMode}
-            onValueChange={setDarkMode}
-            trackColor={{ false: '#767577', true: '#81b0ff' }}
-            thumbColor={darkMode ? '#007AFF' : '#f4f3f4'}
-          />
-        </View>
+        <Text style={styles.sectionTitle}>MQTT Settings</Text>
 
-        <View style={styles.settingRow}>
-          <Text style={styles.settingLabel}>Notifications</Text>
-          <Switch
-            value={notifications}
-            onValueChange={setNotifications}
-            trackColor={{ false: '#767577', true: '#81b0ff' }}
-            thumbColor={notifications ? '#007AFF' : '#f4f3f4'}
-          />
-        </View>
+        <TextInput
+          style={styles.input}
+          placeholder="MQTT IP"
+          value={mqttIP}
+          onChangeText={setMqttIP}
+        />
 
-        <View style={styles.settingRow}>
-          <Text style={styles.settingLabel}>Data Synchronization</Text>
-          <Switch
-            value={dataSync}
-            onValueChange={setDataSync}
-            trackColor={{ false: '#767577', true: '#81b0ff' }}
-            thumbColor={dataSync ? '#007AFF' : '#f4f3f4'}
-          />
-        </View>
-      </View>
+        <TextInput
+          style={styles.input}
+          placeholder="MQTT Port"
+          value={mqttPort}
+          onChangeText={setMqttPort}
+          keyboardType="numeric"
+        />
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>About</Text>
-        <Text style={styles.versionText}>Version 1.0.0</Text>
+        <Button title="Conectar" onPress={connectToMQTT} />
       </View>
     </View>
   );
@@ -84,6 +86,15 @@ const styles = StyleSheet.create({
   settingLabel: {
     fontSize: 16,
     color: '#333',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    color: '#333',
+    marginBottom: 12,
   },
   versionText: {
     fontSize: 14,
