@@ -14,7 +14,5 @@
 #define MQTTPort 1883
 
 /* DECLARATION OF TOPICS VARIABLES */
-const char* topic_sub_status = "control/status";
-const char* topic_sub_params = "control/parameters";
-const char* topic_pub = "esp/return";
-
+//const char* topic_sub = "control_app/#";
+//const char* topic_pub = "control_app/#";
