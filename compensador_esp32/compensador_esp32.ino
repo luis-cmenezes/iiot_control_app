@@ -1,32 +1,34 @@
+#include <EWiFi.h>
 #include <WiFi.h>
 #include <WiFiPassword.h>
 #include <PubSubClient.h>
 
-//Incluindo biblioteca para leitura do encoder
-#include <Encoder.h>
+// Incluindo biblioteca ESP32encoder no lugar do Encoder
+#include <ESP32Encoder.h>
 
-#define ENC_A 34
-#define ENC_B 35
+#define ENC_A 22
+#define ENC_B 23
 #define PWM 18
 #define IN1 19
 #define IN2 21
 
-//Definindo objeto meuEncoder
-Encoder meuEncoder(ENC_A, ENC_B);
+// Definindo objeto meuEncoder com ESP32Encoder
+ESP32Encoder meuEncoder;
 
-//Definindo outras variaveis uteis
+// Definindo outras variaveis uteis
 float thetak = 0.0, thetakm1 = 0.0;
 float tempo1 = 0.0, tempo2 = 0.0, dt = 0.0;
 float velk, vel1 = 0.0, vel2 = 0.0, vel3 = 0.0, mediavel = 0.0;
 float uk = 0.0, ukm1 = 0.0, errokm1 = 0.0, errok = 0.0;
+float f = 0, erroderiv;
 long contEnc = 0.0;
 
-//Zero e Polo compensador
+// Zero e Polo compensador
 float a = 0, b = 0, K = 0, omega_ref = 0;
 
 bool status = false;
 
-//MQTT
+// MQTT
 double tempo_ini = 0.0, tempo_return = 0.0;
 unsigned long lastPublish = 0;
 
@@ -84,27 +86,32 @@ void callback(char* topic, byte* payload, unsigned int length) {
 }
 
 void setup() {
-  //Inicializando comunicacao serial
+  // Inicializando comunicacao serial
   Serial.begin(115200);
 
-  //Definindo Entradas da ponte H
+  // Definindo Entradas da ponte H
   pinMode(PWM, OUTPUT);
   pinMode(IN1, OUTPUT);
   pinMode(IN2, OUTPUT);
 
-  //sentido horario
+  // Configuração do encoder com ESP32Encoder
+  meuEncoder.attachHalfQuad(ENC_A, ENC_B);
+  meuEncoder.setCount(0); // Zera o contador
+
+  // sentido horario
   digitalWrite(IN1, HIGH);
   digitalWrite(IN2, LOW);
 
   // Conecta ao Wi-Fi
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(SSID, password);
-  Serial.print("Conectando ao Wi-Fi");
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println(" Conectado!");
+  do {
+    username == "XXXX" ? ewifi.setWiFi(SSID, password):ewifi.setWiFi(SSID, WPA2_AUTH_PEAP, anonymous, username, password);
+    ewifi.connect();
+
+    if(ewifi.status() != WL_CONNECTED) printf("\nConnection failed (%s)...\n", SSID);
+    else {break;}
+  } while(true);
+
+  printf("Connected to %s!\n", SSID);
 
   // Configura MQTT
   client.setServer(MQTTServer, MQTTPort);
@@ -117,54 +124,77 @@ void loop() {
   }
   client.loop();
 
-  if (micros() - tempo1 > 1000 && status) {
-    //Determinando leitura autal do encoder
-    contEnc = meuEncoder.read();
+  if (status) {
+    if (micros() - tempo1 > 1000) { // 1000 us
+      // Determinando leitura atual do encoder
+      contEnc = meuEncoder.getCount();
 
-    //Calculando theta a partir da leitura do encoder
-    thetak = contEnc * 2 * 3.1415 / (334 * 4);  //rad/s
+      // Calculando theta a partir da leitura do encoder
+      thetak = contEnc * 2 * 3.1415 / (334 * 4);  // rad/s
 
-    //Determinando tempo atual
-    tempo2 = micros();
+      // Determinando tempo atual
+      tempo2 = micros();
 
-    //Calculando dt
-    dt = tempo2 - tempo1;  //em micro s
-    tempo1 = tempo2;
+      // Calculando dt
+      dt = tempo2 - tempo1;  // em micro s
+      tempo1 = tempo2;
 
-    //Calculando velocidade angular
-    velk = (thetak - thetakm1) / (dt / 1E6);
+      // Calculando velocidade angular
+      velk = (thetak - thetakm1) / (dt / 1E6);
 
-    //calculando media movel dos tres ultimos valores
-    vel3 = vel2;
-    vel2 = vel1;
-    vel1 = velk;
-    mediavel = (vel1 + vel2 + vel3) / 3;
+      // calculando media movel dos tres ultimos valores
+      vel3 = vel2;
+      vel2 = vel1;
+      vel1 = velk;
+      mediavel = (vel1 + vel2 + vel3) / 3;
 
-    //Obtendo erro de rastreamento
-    errok = omega_ref - velk;  //mediavel;
+      // Obtendo erro de rastreamento
+      errok = omega_ref - mediavel;
+      erroderiv = (errok - errokm1) / (dt / 1E6);
 
-    //Calculando controle
-    uk = (ukm1 - K * errokm1 + K * a * errok) / b;
+      // Calculando controle
+      f = -b*uk + K*erroderiv + K*a*errok;
+      uk = ukm1 + f * (dt / 1E6);
 
-    //Housekeeping
-    ukm1 = uk;
-    errokm1 = errok;
-    thetakm1 = thetak;
+      // Housekeeping
+      ukm1 = uk;
+      errokm1 = errok;
+      thetakm1 = thetak;
 
-    if (uk >= 100) { uk = 100; }
-    if (uk <= 0) { uk = 0; }
+      if (uk >= 100) { uk = 100; }
+      if (uk <= 0) { uk = 0; }
+  
+      // Aplicando controle a planta
+      analogWrite(PWM, uk * 255.0 / 100.0);
+  
+      tempo_return = (micros() - tempo_ini) / 1E6;
+  
+      retorno = String(tempo_return, 2) + ", " + String(errok, 2) + ", " + String(uk, 2) + ", " + String(omega_ref, 2) + ", " + String(mediavel, 2);
+      Serial.println(retorno);
 
-    //Aplicando controle a planta
-    analogWrite(PWM, uk * 255.0 / 100.0);
-
-    tempo_return = (micros() - tempo_ini) / 1E6;
-
-    retorno = String(tempo_return, 2) + "," + String(errok, 2) + "," + String(uk, 2) + "," + String(omega_ref, 2) + "," + String(mediavel, 2);
-    Serial.println(retorno);
-  }
-
-  if (millis() - lastPublish > 1000 && status) {  // publica a cada 1000 ms
-    client.publish(topic_pub, retorno.c_str());
-    lastPublish = millis();
+      if (millis() - lastPublish > 500) {  // publica a cada 500 ms
+        client.publish(topic_pub, retorno.c_str());
+        lastPublish = millis();
+      }
+    }
+  } else {
+    analogWrite(PWM, 0);
+    thetak = 0.0;
+    thetakm1 = 0.0;
+    tempo1 = 0.0;
+    tempo2 = 0.0;
+    dt = 0.0;
+    velk = 0.0;
+    vel1 = 0.0; 
+    vel2 = 0.0; 
+    vel3 = 0.0;
+    mediavel = 0.0;
+    uk = 0.0;
+    ukm1 = 0.0;
+    errokm1 = 0.0;
+    errok = 0.0;
+    f = 0;
+    erroderiv = 0.0;
+    meuEncoder.setCount(0); // Zera o contador quando desligado
   }
 }
