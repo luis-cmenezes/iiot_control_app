@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BROKER="192.168.1.6"
+BROKER="35.215.219.189"
 PORT=1883
 TOPIC="esp/return"
 
@@ -13,7 +13,7 @@ while true; do
     READING=$i
 
     i=$((i + 1))
-    PAYLOAD="{\"time\": $TEMPO, \"error\": $ERROR, \"control\": $CONTROL, \"setpoint\": $SETPOINT, \"reading\": $READING}"
+    PAYLOAD="$TEMPO, $ERROR, $CONTROL, $SETPOINT, $READING"
     mosquitto_pub -h "$BROKER" -p "$PORT" -t "$TOPIC" -m "$PAYLOAD"
 
     echo "Publicado: $PAYLOAD"

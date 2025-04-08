@@ -11,6 +11,7 @@
   "dependencies": {
     "@expo/vector-icons": "^14.0.2",
     "@lucide/lab": "^0.1.2",
+    "@react-native-community/slider": "^4.5.5",
     "@react-navigation/bottom-tabs": "^7.2.0",
     "@react-navigation/native": "^7.0.14",
     "expo": "^52.0.41",
@@ -42,8 +43,7 @@
     "react-native-url-polyfill": "^2.0.0",
     "react-native-web": "^0.19.13",
     "react-native-webview": "13.12.5",
-    "victory-native": "^36.9.1",
-    "@react-native-community/slider": "4.5.5"
+    "victory-native": "^36.9.1"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

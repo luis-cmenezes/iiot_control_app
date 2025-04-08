@@ -3,8 +3,8 @@ import { View, Text, StyleSheet, TextInput, Button, Alert } from 'react-native';
 import MQTTService from '../services/mqttService';
 
 export default function SettingsScreen() {
-  const [mqttIP, setMqttIP] = useState('');
-  const [mqttPort, setMqttPort] = useState('');
+  const [mqttIP, setMqttIP] = useState('35.215.219.189');
+  const [mqttPort, setMqttPort] = useState('9001');
 
   const connectToMQTT = () => {
     if (!mqttIP || !mqttPort) {

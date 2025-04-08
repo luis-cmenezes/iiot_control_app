@@ -12,13 +12,10 @@ export default function ControlScreen() {
   const [setpoint, setSetpoint] = useState('');
 
   const handleSubmit = () => {
-    const controlData = {
-      controller,
-      setpoint: Number(setpoint),
-    };
-    const message = JSON.stringify(controlData);
+    const message = `${controller.zero}, ${controller.pole}, ${controller.gain}, ${Number(setpoint)}`;
+
     MQTTService.publish('control/parameters', message);
-    console.log('Control Parameters Published:', controlData);
+    console.log('Control Parameters Published:', message);
   };
 
   return (

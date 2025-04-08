@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { View, StyleSheet, Dimensions } from 'react-native';
+import { useState, useEffect } from 'react';
+import { View, StyleSheet, Dimensions, TouchableOpacity, Text } from 'react-native';
 import { VictoryChart, VictoryLine, VictoryAxis, VictoryLegend } from 'victory-native';
 import MQTTService from '../services/mqttService';
 
@@ -8,23 +8,34 @@ export default function MonitoringScreen() {
   const [controlData, setControlData] = useState<{ x: number; y: number }[]>([]);
   const [setpointData, setSetpointData] = useState<{ x: number; y: number }[]>([]);
   const [readingData, setReadingData] = useState<{ x: number; y: number }[]>([]);
+  const [running, setRunning] = useState(false);
 
-  const firstTimeRef = useRef(-1);
+  const toggleSystem = () => {
+    setRunning((prev) => {
+      const message = prev ? '0' : '1';
+      MQTTService.publish('control/status', message);
+
+      if (prev) {
+        setErrorData([]);
+        setControlData([]);
+        setSetpointData([]);
+        setReadingData([]);
+      }
+  
+      return !prev;
+    });
+  };
 
   useEffect(() => {
     const handleMessage = (message: any) => {
       try {
-        const payload = JSON.parse(message.payloadString);
-        const { time, error, control, setpoint, reading } = payload;
-        if (firstTimeRef.current === -1) {
-          firstTimeRef.current = time;
-        }
+        const [time, error, control, setpoint, reading] = message.payloadString.split(', ').map(Number);
 
         // Update error and control data
-        setErrorData((prev) => [...prev, { x: time - firstTimeRef.current, y: error }]);
-        setControlData((prev) => [...prev, { x: time - firstTimeRef.current, y: control }]);
-        setSetpointData((prev) => [...prev, { x: time - firstTimeRef.current, y: setpoint }]);
-        setReadingData((prev) => [...prev, { x: time - firstTimeRef.current, y: reading }]);
+        setErrorData((prev) => [...prev, { x: time, y: error }]);
+        setControlData((prev) => [...prev, { x: time, y: control }]);
+        setSetpointData((prev) => [...prev, { x: time, y: setpoint }]);
+        setReadingData((prev) => [...prev, { x: time, y: reading }]);
       } catch (e) {
         console.error('Error processing MQTT message:', e);
       }
@@ -90,7 +101,21 @@ export default function MonitoringScreen() {
           ]}
         />
       </VictoryChart>
-
+      
+      <TouchableOpacity
+        onPress={toggleSystem}
+        style={{
+          backgroundColor: running ? 'red' : 'green',
+          padding: 12,
+          borderRadius: 40,
+          alignItems: 'center',
+          marginTop: 16,
+        }}>
+        <Text style={{ color: 'white', fontSize: 16 }}>
+          {running ? 'Stop System' : 'Start System'}
+        </Text>
+      </TouchableOpacity>
+      
     </View>
   );
 }
