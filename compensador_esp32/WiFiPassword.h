@@ -10,7 +10,7 @@
 //#define password "cidinjorge"
 
 #define MQTTClientid "ESP32-RECORDER"
-#define MQTTServer "35.215.219.189"
+#define MQTTServer "35.215.253.43"
 #define MQTTPort 1883
 
 /* DECLARATION OF TOPICS VARIABLES */

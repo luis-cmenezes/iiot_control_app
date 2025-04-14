@@ -156,28 +156,31 @@ void loop() {
       f = -b*uk + K*erroderiv + K*a*errok;
       uk = ukm1 + f * (dt / 1E6);
 
+      
+      tempo_return = (micros() - tempo_ini) / 1E6;
+  
+      
+      if (uk >= 100) { uk = 100; }
+      if (uk <= 0) { uk = 0; }
+
+      retorno = String(tempo_return, 2) + ", " + String(errok, 2) + ", " + String(uk, 2) + ", " + String(omega_ref, 2) + ", " + String(mediavel, 2);
+      Serial.println(retorno);
+      
       // Housekeeping
       ukm1 = uk;
       errokm1 = errok;
       thetakm1 = thetak;
-
-      if (uk >= 100) { uk = 100; }
-      if (uk <= 0) { uk = 0; }
   
       // Aplicando controle a planta
       analogWrite(PWM, uk * 255.0 / 100.0);
   
-      tempo_return = (micros() - tempo_ini) / 1E6;
-  
-      retorno = String(tempo_return, 2) + ", " + String(errok, 2) + ", " + String(uk, 2) + ", " + String(omega_ref, 2) + ", " + String(mediavel, 2);
-      Serial.println(retorno);
 
       if (millis() - lastPublish > 500) {  // publica a cada 500 ms
         client.publish(topic_pub, retorno.c_str());
         lastPublish = millis();
       }
     }
-  } else {
+  } else if (!status) {
     analogWrite(PWM, 0);
     thetak = 0.0;
     thetakm1 = 0.0;
