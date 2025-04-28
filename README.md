@@ -58,3 +58,4 @@ Nesta aba, o usuário define as informações de IP e porta do broker MQTT para 
   <img src="https://github.com/user-attachments/assets/bdb5064d-0a1c-4b4c-9d1a-8e0f194a593b" width="400"/>
 </p>
 
+Importante notar que o app utiliza protocolo websocket para comunicação e uma porta da rede do broker deve ser aberta utilizando esse protocolo.
