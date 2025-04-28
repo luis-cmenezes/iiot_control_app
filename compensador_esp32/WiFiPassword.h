@@ -1,13 +1,10 @@
 /** DEFINITION OF WiFi DATA
  * Definition of macros SSID, username and password
 */
-#define SSID "UFU-Institucional"
-#define username "jorgehsm@ufu.br"
-#define password "Saojorge2002"
+#define SSID "XXXXX"
+#define username "XXXXX"
+#define password "XXXXX"
 #define anonymous "anonymous@ufu.br"
-
-//#define SSID "Ap 201"
-//#define password "cidinjorge"
 
 #define MQTTClientid "ESP32-RECORDER"
 #define MQTTServer "35.215.253.43"
