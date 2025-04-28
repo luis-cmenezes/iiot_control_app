@@ -14,7 +14,7 @@ Nesta aba, o usuário insere os parâmetros do controlador:
 
 - Ganho (K)
 
-- Plo (b)
+- Polo (b)
 
 - Zero (a)
 
